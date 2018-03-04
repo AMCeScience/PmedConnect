@@ -3,10 +3,16 @@ PmedConnect
 
 To use search::
 
-    >>> import pmedconnect
-    >>> pubmed_ids = pmedconnect.search('Influenza')
+    >>> from PmedConnect import PubmedAPI as api
+    >>> connector = api.PubmedAPI('your@email.com')
+    >>> search = connector.search('Influenza')
+    >>> print(search['pmids'])
+
+Search supports the regular PubMed query language.
 
 To fetch (needs a list of PubMed IDs)::
 
-		>>> import pmedconnect
-		>>> documents = pmedconnect.fetch(pubmed_ids)
+		>>> from PmedConnect import PubmedAPI as api
+    >>> connector = api.PubmedAPI('your@email.com')
+		>>> documents = connector.fetch(search['pmids'])
+    >>> print(documents)

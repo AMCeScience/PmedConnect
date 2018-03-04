@@ -1,5 +1,5 @@
 import PmedConnect.config as config, PmedConnect.ParseFunctions as xpf
-import math, xml.dom.minidom, progressbar, time
+import math, progressbar, time
 
 from datetime import date
 from Bio import Entrez

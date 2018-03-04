@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='PmedConnect',
-      version='0.1',
+      version='0.1.1',
       description='Searches and fetches results from PubMed',
       url='http://github.com/AMCeScience/PmedConnect',
       author='Allard van Altena',

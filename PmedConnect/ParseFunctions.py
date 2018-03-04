@@ -63,7 +63,7 @@ class Parser(object):
         if articleid.attributes['IdType'].lower() == idtype:
           found = str(articleid)
 
-      if found is None and 'path_' + idtype in config.available_parse_paths:
+      if found is None and 'path_' + idtype in self.available_parse_paths:
         found = self.extract_path_factory(idtype)(doc_data)
 
         if found is not None:
@@ -83,7 +83,7 @@ class Parser(object):
 
   def extract_path_factory(self, field, rdict = None, fmt = None):
     def extract_path(doc_data, alternative = None):        
-      for path in config.available_parse_paths['path_' + field]['paths']:
+      for path in self.available_parse_paths['path_' + field]['paths']:
         data = doc_data
 
         try:
