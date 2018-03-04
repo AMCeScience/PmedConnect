@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<!DOCTYPE PubmedArticleSet
+  PUBLIC '-//NLM//DTD PubMedArticle, 1st January 2018//EN'
+  'https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_180101.dtd'>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation Owner="NLM" Status="MEDLINE">
+      <PMID Version="1">00000001</PMID>
+      <DateCompleted>
+        <Year>2000</Year>
+        <Month>01</Month>
+        <Day>01</Day>
+      </DateCompleted>
+      <DateRevised>
+        <Year>2000</Year>
+        <Month>01</Month>
+        <Day>01</Day>
+      </DateRevised>
+      <Article PubModel="Print">
+        <Journal>
+          <ISSN IssnType="Print">0001-0001</ISSN>
+          <JournalIssue CitedMedium="Print">
+            <Volume>1</Volume>
+            <Issue>1</Issue>
+            <PubDate>
+              <MedlineDate>2000 Jan 1</MedlineDate>
+            </PubDate>
+          </JournalIssue>
+          <Title>Test Title</Title>
+          <ISOAbbreviation>TestT</ISOAbbreviation>
+        </Journal>
+        <ArticleTitle>Test Title.</ArticleTitle>
+        <Abstract>
+          <AbstractText>Test Abstract</AbstractText>
+        </Abstract>
+        <Pagination>
+          <MedlinePgn>3</MedlinePgn>
+        </Pagination>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>TestLast</LastName>
+            <ForeName>T</ForeName>
+            <Initials>T</Initials>
+          </Author>
+        </AuthorList>
+        <Language>eng</Language>
+        <PublicationTypeList>
+          <PublicationType UI="D016433">News</PublicationType>
+        </PublicationTypeList>
+      </Article>
+      <MedlineJournalInfo>
+        <Country>United States</Country>
+        <MedlineTA>TestT</MedlineTA>
+        <NlmUniqueID>0000001</NlmUniqueID>
+        <ISSNLinking>0001-0001</ISSNLinking>
+      </MedlineJournalInfo>
+      <CitationSubset>H</CitationSubset>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName MajorTopicYN="N" UI="D000001">Test Mesh</DescriptorName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+    <PubmedData>
+      <History>
+        <PubMedPubDate PubStatus="pubmed">
+          <Year>2000</Year>
+          <Month>1</Month>
+          <Day>1</Day>
+          <Hour>0</Hour>
+          <Minute>0</Minute>
+        </PubMedPubDate>
+        <PubMedPubDate PubStatus="medline">
+          <Year>2000</Year>
+          <Month>1</Month>
+          <Day>1</Day>
+          <Hour>0</Hour>
+          <Minute>1</Minute>
+        </PubMedPubDate>
+        <PubMedPubDate PubStatus="entrez">
+          <Year>2000</Year>
+          <Month>1</Month>
+          <Day>1</Day>
+          <Hour>0</Hour>
+          <Minute>0</Minute>
+        </PubMedPubDate>
+      </History>
+      <PublicationStatus>ppublish</PublicationStatus>
+      <ArticleIdList>
+        <ArticleId IdType="pubmed">00000001</ArticleId>
+      </ArticleIdList>
+    </PubmedData>
+  </PubmedArticle>
+</PubmedArticleSet>

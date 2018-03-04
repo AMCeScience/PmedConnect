@@ -1,0 +1,3 @@
+include README.rst
+include PmedConnect/tests/fetch_output.xml
+include PmedConnect/tests/search_output.xml

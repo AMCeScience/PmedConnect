@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSearchResult PUBLIC "-//NLM//DTD esearch 20060628//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20060628/esearch.dtd">
+<eSearchResult>
+  <Count>500000</Count>
+  <RetMax>10</RetMax>
+  <RetStart>10</RetStart>
+  <IdList>
+    <Id>00000001</Id>
+  </IdList>
+  <TranslationSet/>
+  <TranslationStack>
+    <TermSet>
+      <Term>Testable[All Fields]</Term>
+      <Field>All Fields</Field>
+      <Count>500000</Count>
+      <Explode>N</Explode>
+    </TermSet>
+    <TermSet>
+      <Term>Query[All Fields]</Term>
+      <Field>All Fields</Field>
+      <Count>500000</Count>
+      <Explode>N</Explode>
+    </TermSet>
+    <OP>AND</OP>
+    <OP>GROUP</OP>
+  </TranslationStack>
+  <QueryTranslation>Testable[All Fields] AND Query[All Fields]</QueryTranslation>
+</eSearchResult>
