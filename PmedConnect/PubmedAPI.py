@@ -61,7 +61,7 @@ class PubmedAPI(object):
     if num_retrieve_per_round is not None:
       # Check against the Entrez API limits
       if num_retrieve_per_round > config.ENTREZ_MAX_RETRIEVE:
-        raise ValueError('Number of items to retrieve lies outside the maximum of the Entrez API')
+        raise ValueError('Number of items to retrieve per round lies outside the maximum of the Entrez API')
 
       self.retmax = num_retrieve_per_round
 
@@ -112,7 +112,7 @@ class PubmedAPI(object):
 
   def get_search_params(self, query, retstart):
     """Creates a dictionary of parameters to pass into the Entrez.esearch function"""
-    func_params = dict(db = 'pubmed', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
+    func_params = dict(db = 'pmc', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
 
     if self.mindate is not None:
       func_params['datetype'] = self.datetype
@@ -182,10 +182,12 @@ class PubmedAPI(object):
 
     return fetch_results['PubmedArticle']
 
-  def fetch(self, pmid):
+  def fetch(self, pmid, ):
     """Breaks Entrez fetching process into blocks,
     fetches documents in chunks of fetch_block."""
     number_of_rounds = int(math.floor(len(pmid) / self.fetch_block + (len(pmid) % self.fetch_block > 0)))
+
+    self.set_retrieve_params(len(pmid), self.fetch_block)
     
     doc_list = []
 
@@ -196,8 +198,8 @@ class PubmedAPI(object):
         start = i * self.fetch_block
         finish = (i + 1) * self.fetch_block
 
-        self.update_search_progressbar(i, number_of_rounds * self.fetch_block, start)
-                 
+        self.update_search_progressbar(i, len(pmid), start)
+        
         doc_list = doc_list + self.fetch_round(pmid[start:finish])
     else:
       print('Will fetch %i articles.' % len(pmid))
