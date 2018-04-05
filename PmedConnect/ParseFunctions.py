@@ -56,12 +56,16 @@ class Parser(object):
 
   def extract_id_factory(self, idtype):
     """Extract an ID from Entrez XML output."""
-    def extract_id(doc_data):
+    def extract_id(doc_data, key = 'PubmedData'):
       found = None
 
-      for articleid in doc_data['PubmedData']['ArticleIdList']:
-        if articleid.attributes['IdType'].lower() == idtype:
-          found = str(articleid)
+      try:
+        for articleid in doc_data[key]['ArticleIdList']:
+          if articleid.attributes['IdType'].lower() == idtype:
+            found = str(articleid)
+      except (KeyError):
+        if key is 'PubmedData':
+          return extract_id(doc_data, 'PubmedBookData')
 
       if found is None and 'path_' + idtype in self.available_parse_paths:
         found = self.extract_path_factory(idtype)(doc_data)
@@ -74,15 +78,19 @@ class Parser(object):
     return extract_id
 
   def extract_date_factory(self, datetype):
-    def extract_date(doc_data):
-      for date in doc_data['PubmedData']['History']:
-        if date.attributes['PubStatus'].lower() == datetype:
-          return self.format_ddate(date)
+    def extract_date(doc_data, key = 'PubmedData'):
+      try:
+        for date in doc_data[key]['History']:
+          if date.attributes['PubStatus'].lower() == datetype:
+            return self.format_ddate(date)
+      except (KeyError):
+        if key is 'PubmedData':
+          return extract_date(doc_data, 'PubmedBookData')
     
     return extract_date
 
   def extract_path_factory(self, field, rdict = None, fmt = None):
-    def extract_path(doc_data, alternative = None):        
+    def extract_path(doc_data):        
       for path in self.available_parse_paths['path_' + field]['paths']:
         data = doc_data
 

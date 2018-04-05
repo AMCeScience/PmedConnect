@@ -71,7 +71,7 @@ class PubmedAPI(object):
       self.retnum = num_retrieve
 
       # Adjust the maximum number of items to retrieve per search.
-      # If the nubmer to retrieve is lower than the current maximum
+      # If the number to retrieve is lower than the current maximum
       # number of results per request, set the retmax to num_retrieve.
       if num_retrieve < self.retmax:
         self.retmax = num_retrieve
@@ -112,7 +112,7 @@ class PubmedAPI(object):
 
   def get_search_params(self, query, retstart):
     """Creates a dictionary of parameters to pass into the Entrez.esearch function"""
-    func_params = dict(db = 'pmc', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
+    func_params = dict(db = 'pubmed', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
 
     if self.mindate is not None:
       func_params['datetype'] = self.datetype
@@ -179,8 +179,11 @@ class PubmedAPI(object):
     func_params = dict(db = 'pubmed', id = pmids, retmode = self.retmode)
     
     fetch_results = Entrez.read(Entrez.efetch(**func_params))
+    
+    articles = fetch_results['PubmedArticle']
+    books = fetch_results['PubmedBookArticle']
 
-    return fetch_results['PubmedArticle']
+    return articles + books
 
   def fetch(self, pmid, ):
     """Breaks Entrez fetching process into blocks,
@@ -201,6 +204,8 @@ class PubmedAPI(object):
         self.update_search_progressbar(i, len(pmid), start)
         
         doc_list = doc_list + self.fetch_round(pmid[start:finish])
+
+      print('\n')
     else:
       print('Will fetch %i articles.' % len(pmid))
 
