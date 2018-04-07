@@ -16,7 +16,7 @@ RETRIEVE_FIELDS = AVAILABLE_FIELDS
 
 PUBMED_PATHS = {
   'path_doi': {'paths': [['MedlineCitation', 'Article', 'ELocationID']]},
-  'path_title': {'paths': [['MedlineCitation', 'Article', 'ArticleTitle'], ['BookDocument', 'ArticleTitle']]},
+  'path_title': {'paths': [['MedlineCitation', 'Article', 'ArticleTitle'], ['BookDocument', 'ArticleTitle'], ['BookDocument', 'Book', 'BookTitle']]},
   'path_abstract': {'paths': [['MedlineCitation', 'Article', 'Abstract', 'AbstractText'], ['BookDocument', 'Abstract', 'AbstractText']]},
   'path_vol': {'paths': [['MedlineCitation', 'Article', 'Journal', 'JournalIssue', 'Volume']]},
   'path_pages': {'paths': [['MedlineCitation', 'Article', 'Pagination', 'MedlinePgn']]},
