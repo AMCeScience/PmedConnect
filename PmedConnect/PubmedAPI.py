@@ -24,15 +24,27 @@ class PubmedAPI(object):
   rounds_made = 0
 
   # Constants
+  db = 'pubmed'
   retmode = 'xml'
   datetype = 'pdat'
   fetch_block = config.RESULTS_PER_FETCH_REQUEST
 
   def __init__(self, email, fields = None):
-    #Entrez requires an email address.
+    # Entrez requires an email address.
     Entrez.email = email
 
     self.parser = xpf.Parser(fields)
+
+    # Set default search database
+    self.db = 'pubmed'
+
+  def set_search_database(self, db):
+    available_dbs = ['pubmed', 'pmc']
+
+    if db not in available_dbs:
+      raise ValueError('This database is not supported')
+
+    self.db = db
 
   def set_search_date(self, mindate, maxdate = None):
     """Restricts searches to the specified date range (format as YYYY/MM/DD, YYYY/MM, or YYYY)"""
@@ -112,7 +124,7 @@ class PubmedAPI(object):
 
   def get_search_params(self, query, retstart):
     """Creates a dictionary of parameters to pass into the Entrez.esearch function"""
-    func_params = dict(db = 'pubmed', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
+    func_params = dict(db = self.db, term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
 
     if self.mindate is not None:
       func_params['datetype'] = self.datetype
@@ -176,10 +188,11 @@ class PubmedAPI(object):
 
   def fetch_round(self, pmids):
     """Fetch and parse the XML for a list of PMIDs."""
-    func_params = dict(db = 'pubmed', id = pmids, retmode = self.retmode)
+    func_params = dict(db = self.db, id = pmids, retmode = self.retmode)
     
     fetch_results = Entrez.read(Entrez.efetch(**func_params))
     
+    # TODO: reorder according to original pmids list
     articles = fetch_results['PubmedArticle']
     books = fetch_results['PubmedBookArticle']
 
