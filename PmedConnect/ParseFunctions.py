@@ -28,13 +28,33 @@ class Parser(object):
     """Extracts the required fields from the documents,
     where each document is an Entrez dictionary"""    
     parsed_doc = {}
-      
+
+    parsed_doc['doc_type'] = self.determine_doc_type(doc)
+
     for field in self.fields:
       parse_func = self.parse_functions.get(field)
       
       parsed_doc[field] = parse_func(doc)
 
     return parsed_doc
+
+  def determine_doc_type(self, doc):
+    for path in self.available_parse_paths['path_determine_type']['paths']:
+      try:
+        data = doc
+
+        for node in path:
+          data = data[node]
+
+        if node == 'PublicationTypeList':
+          return data[0]
+        
+        return node
+      except KeyError:
+        continue
+
+    return 'Other'
+
 
   def parse_abstract(self, abs_str):
     """Abstracts may contain multiple elements, convert to string and return joined string"""
@@ -115,24 +135,30 @@ class Parser(object):
 
     return extract_path
 
-  def extract_keywords(self, doc_data):
-    try:
-      data = doc_data
+  def extract_keywords_factory(self):
+    def extract_keywords(doc_data):
+      for path in self.available_parse_paths['path_keywords']['paths']:
+        try:
+          data = doc_data
 
-      for node in ['MedlineCitation', 'KeywordList']:
-        data = data[node]
+          for node in path:
+            data = data[node]
 
-      keywords = []
-      
-      try:
-        for keyword in data[0]:
-          keywords.append(str(keyword))
-      except IndexError:
-        return keywords
+          keywords = []
+          
+          try:
+            for keyword in data[0]:
+              keywords.append(str(keyword))
+          except IndexError:
+            return keywords
 
-      return keywords
-    except (KeyError, TypeError):
+          return keywords
+        except (KeyError, TypeError):
+          continue
+
       return None
+
+    return extract_keywords
 
   def add_extra_parse_functions(self, parse_functions):
     raise NotImplementedError
@@ -163,4 +189,6 @@ class Parser(object):
       'journal_title': self.extract_path_factory('journal_title'),
       'journal_iso': self.extract_path_factory('journal_iso'),
       'journal_issn': self.extract_path_factory('journal_issn', fmt = str),
+
+      'keywords': self.extract_keywords_factory()
     }
