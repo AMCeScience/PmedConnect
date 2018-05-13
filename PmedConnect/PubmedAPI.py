@@ -117,12 +117,16 @@ class PubmedAPI(object):
 
   def update_search_progressbar(self, initialise, max_results, current_results):
     """Initialises and updates the progressbar during searches"""
+    if config.SILENT is True:
+      return
+
     if initialise == 0:
       bar_max = self.retnum
 
       if self.retnum == 0 or self.retnum > max_results:
         bar_max = max_results
 
+      
       self.search_progressbar_obj = progressbar.ProgressBar(max_value = bar_max)
       
     self.search_progressbar_obj.update(current_results)

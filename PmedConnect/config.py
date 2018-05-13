@@ -34,3 +34,5 @@ PUBMED_PATHS = {
 
   'path_keywords': {'paths': [['MedlineCitation', 'KeywordList']]}
 }
+
+SILENT = True
