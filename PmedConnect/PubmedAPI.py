@@ -96,11 +96,13 @@ class PubmedAPI(object):
   def check_search_error(self, search_results):
     """Checks whether the search results contain an error, in which case an exception is raised"""
     if 'WarningList' in search_results:
+      warnings = '; '.join(search_results['WarningList']['OutputMessage'])
+
       # Regular error when no results are returned for a search
-      if search_results['WarningList']['OutputMessage'] is 'No items found.' and config.IGNORE_NO_ITEMS:
+      if 'No items found' in warnings and config.IGNORE_NO_ITEMS:
         return
 
-      raise Exception('Entrez error: %s' % (search_results['WarningList']['OutputMessage']))
+      raise Exception('Entrez error: %s' % (warnings))
 
   def update_search_summary(self, search_results, num_ids):
     self.total_results = int(search_results['Count'])
