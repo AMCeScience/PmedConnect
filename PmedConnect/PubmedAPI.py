@@ -1,4 +1,4 @@
-import PmedConnect.config as config, PmedConnect.ParseFunctions as xpf
+import PmedConnect.config as config, PmedConnect.ParseFunctions as xpf, PmedConnect.ReadPMC as xr
 import math, progressbar, time
 
 from datetime import date
@@ -7,6 +7,7 @@ from Bio import Entrez
 class PubmedAPI(object):
   """Searches and fetches data from Pubmed using the Entrez module from Biopython."""
 
+  xml_reader = None
   search_progressbar_obj = None
 
   mindate = None
@@ -24,6 +25,7 @@ class PubmedAPI(object):
   rounds_made = 0
 
   # Constants
+  converted_ids = False
   db = 'pubmed'
   retmode = 'xml'
   datetype = 'pdat'
@@ -45,6 +47,9 @@ class PubmedAPI(object):
       raise ValueError('This database is not supported')
 
     self.db = db
+
+    if self.db is 'pmc':
+      self.xml_reader = xr.ReadPMC()
 
   def set_search_date(self, mindate, maxdate = None):
     """Restricts searches to the specified date range (format as YYYY/MM/DD, YYYY/MM, or YYYY)"""
@@ -144,7 +149,7 @@ class PubmedAPI(object):
     of IDs if it is bigger than the maximum number of results to
     return (i.e. self.retnum)"""
     self.check_search_error(results)
-
+    
     ids = existing_ids + results['IdList']
 
     # Cut IDs to size of maximum to retrieve
@@ -186,19 +191,56 @@ class PubmedAPI(object):
     
     return self.attach_search_summary(pmids)
 
+  def read_results(self, fetch_results):
+    # For the reasoning behind this function read the comment
+    # below in the function parse_results.
+
+    if self.db is 'pubmed' or self.converted_ids is True:
+      read_results = Entrez.read(fetch_results)
+
+      # TODO: reorder according to original pmids list
+      articles = read_results['PubmedArticle']
+      books = read_results['PubmedBookArticle']
+
+      return articles + books
+    
+    if self.db is 'pmc':
+      return fetch_results
+
   def fetch_round(self, pmids):
     """Fetch and parse the XML for a list of PMIDs."""
-    func_params = dict(db = self.db, id = pmids, retmode = self.retmode)
-    
-    fetch_results = Entrez.read(Entrez.efetch(**func_params))
-    
-    # TODO: reorder according to original pmids list
-    articles = fetch_results['PubmedArticle']
-    books = fetch_results['PubmedBookArticle']
+    fetch_db = self.db
 
-    return articles + books
+    if self.converted_ids is True:
+      fetch_db = 'pubmed'
 
-  def fetch(self, pmid, ):
+    func_params = dict(db = fetch_db, id = pmids, retmode = self.retmode)
+
+    fetch_results = Entrez.efetch(**func_params)
+    
+    return self.read_results(fetch_results)
+
+  def parse_results(self, doc_list):
+    if self.db is 'pubmed' or self.converted_ids is True:
+      self.converted_ids = False
+
+      return self.parser.extract_from_docs(doc_list)
+
+    if self.db is 'pmc':
+      # PMC searches yield PMC IDs. The Bio.Entrez does
+      # not handle PMC XML. Therefore, the first round of 
+      # fetching is used to get the pmids. Run the pmids
+      # through another round of fetching to build the
+      # Bio.Entrez data format.
+      # This is not efficient but much easier than building
+      # the data format from the PMC XML.
+      pmids = self.xml_reader.get_pmids(doc_list)
+
+      self.converted_ids = True
+
+      return self.fetch(pmids)
+
+  def fetch(self, pmid):
     """Breaks Entrez fetching process into blocks,
     fetches documents in chunks of fetch_block."""
     number_of_rounds = int(math.floor(len(pmid) / self.fetch_block + (len(pmid) % self.fetch_block > 0)))
@@ -224,4 +266,6 @@ class PubmedAPI(object):
 
       doc_list = self.fetch_round(pmid)
     
-    return self.parser.extract_from_docs(doc_list)
+    parsed_results = self.parse_results(doc_list)
+
+    return parsed_results
