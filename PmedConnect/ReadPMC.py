@@ -16,6 +16,8 @@ class ReadPMC(object):
       # Retrieve the pmids
       pmid_list.append(self.get_pmid(doc))
 
+    cleaned_pmid_list = list(filter(None.__ne__, pmid_list))
+
     list_len = len(pmid_list)
     clean_len = len(cleaned_pmid_list)
 
