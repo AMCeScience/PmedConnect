@@ -29,7 +29,7 @@ class ReadPMC(object):
   def get_pmid(self, article):
     for item in article.getElementsByTagName('article-id'):
       if item.attributes['pub-id-type'].value == 'pmid':
-        if item.firstChild.nodeValue is None:
-          article.toprettyxml()
+        # if item.firstChild.nodeValue is None:
+        #   article.toprettyxml()
 
         return item.firstChild.nodeValue
