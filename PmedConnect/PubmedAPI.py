@@ -1,4 +1,4 @@
-import PmedConnect.config as config, PmedConnect.ParseFunctions as xpf
+import PmedConnect.config as config, PmedConnect.ParseFunctions as xpf, PmedConnect.ReadPMC as xr
 import math, progressbar, time
 
 from datetime import date
@@ -7,6 +7,7 @@ from Bio import Entrez
 class PubmedAPI(object):
   """Searches and fetches data from Pubmed using the Entrez module from Biopython."""
 
+  xml_reader = None
   search_progressbar_obj = None
 
   mindate = None
@@ -24,15 +25,31 @@ class PubmedAPI(object):
   rounds_made = 0
 
   # Constants
+  converted_ids = False
+  db = 'pubmed'
   retmode = 'xml'
   datetype = 'pdat'
   fetch_block = config.RESULTS_PER_FETCH_REQUEST
 
   def __init__(self, email, fields = None):
-    #Entrez requires an email address.
+    # Entrez requires an email address.
     Entrez.email = email
 
     self.parser = xpf.Parser(fields)
+
+    # Set default search database
+    self.db = 'pubmed'
+
+  def set_search_database(self, db):
+    available_dbs = ['pubmed', 'pmc']
+
+    if db not in available_dbs:
+      raise ValueError('This database is not supported')
+
+    self.db = db
+
+    if self.db is 'pmc':
+      self.xml_reader = xr.ReadPMC()
 
   def set_search_date(self, mindate, maxdate = None):
     """Restricts searches to the specified date range (format as YYYY/MM/DD, YYYY/MM, or YYYY)"""
@@ -61,7 +78,7 @@ class PubmedAPI(object):
     if num_retrieve_per_round is not None:
       # Check against the Entrez API limits
       if num_retrieve_per_round > config.ENTREZ_MAX_RETRIEVE:
-        raise ValueError('Number of items to retrieve lies outside the maximum of the Entrez API')
+        raise ValueError('Number of items to retrieve per round lies outside the maximum of the Entrez API')
 
       self.retmax = num_retrieve_per_round
 
@@ -71,7 +88,7 @@ class PubmedAPI(object):
       self.retnum = num_retrieve
 
       # Adjust the maximum number of items to retrieve per search.
-      # If the nubmer to retrieve is lower than the current maximum
+      # If the number to retrieve is lower than the current maximum
       # number of results per request, set the retmax to num_retrieve.
       if num_retrieve < self.retmax:
         self.retmax = num_retrieve
@@ -79,7 +96,13 @@ class PubmedAPI(object):
   def check_search_error(self, search_results):
     """Checks whether the search results contain an error, in which case an exception is raised"""
     if 'WarningList' in search_results:
-      raise Exception('Entrez error: ' + '; '.join(search_results['WarningList']['OutputMessage']))
+      warnings = '; '.join(search_results['WarningList']['OutputMessage'])
+
+      # Regular error when no results are returned for a search
+      if 'No items found' in warnings and config.IGNORE_NO_ITEMS:
+        return
+
+      raise Exception('Entrez error: %s' % (warnings))
 
   def update_search_summary(self, search_results, num_ids):
     self.total_results = int(search_results['Count'])
@@ -100,19 +123,23 @@ class PubmedAPI(object):
 
   def update_search_progressbar(self, initialise, max_results, current_results):
     """Initialises and updates the progressbar during searches"""
+    if config.SILENT is True:
+      return
+
     if initialise == 0:
       bar_max = self.retnum
 
       if self.retnum == 0 or self.retnum > max_results:
         bar_max = max_results
 
+      
       self.search_progressbar_obj = progressbar.ProgressBar(max_value = bar_max)
       
     self.search_progressbar_obj.update(current_results)
 
   def get_search_params(self, query, retstart):
     """Creates a dictionary of parameters to pass into the Entrez.esearch function"""
-    func_params = dict(db = 'pubmed', term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
+    func_params = dict(db = self.db, term = query, retmode = self.retmode, retstart = retstart, retmax = self.retmax)
 
     if self.mindate is not None:
       func_params['datetype'] = self.datetype
@@ -132,7 +159,7 @@ class PubmedAPI(object):
     of IDs if it is bigger than the maximum number of results to
     return (i.e. self.retnum)"""
     self.check_search_error(results)
-
+    
     ids = existing_ids + results['IdList']
 
     # Cut IDs to size of maximum to retrieve
@@ -174,18 +201,61 @@ class PubmedAPI(object):
     
     return self.attach_search_summary(pmids)
 
+  def read_results(self, fetch_results):
+    # For the reasoning behind this function read the comment
+    # below in the function parse_results.
+
+    if self.db is 'pubmed' or self.converted_ids is True:
+      read_results = Entrez.read(fetch_results)
+
+      # TODO: reorder according to original pmids list
+      articles = read_results['PubmedArticle']
+      books = read_results['PubmedBookArticle']
+
+      return articles + books
+    
+    if self.db is 'pmc':
+      return fetch_results
+
   def fetch_round(self, pmids):
     """Fetch and parse the XML for a list of PMIDs."""
-    func_params = dict(db = 'pubmed', id = pmids, retmode = self.retmode)
-    
-    fetch_results = Entrez.read(Entrez.efetch(**func_params))
+    fetch_db = self.db
 
-    return fetch_results['PubmedArticle']
+    if self.converted_ids is True:
+      fetch_db = 'pubmed'
+
+    func_params = dict(db = fetch_db, id = pmids, retmode = self.retmode)
+
+    fetch_results = Entrez.efetch(**func_params)
+    
+    return self.read_results(fetch_results)
+
+  def parse_results(self, doc_list):
+    if self.db is 'pubmed' or self.converted_ids is True:
+      self.converted_ids = False
+
+      return self.parser.extract_from_docs(doc_list)
+
+    if self.db is 'pmc':
+      # PMC searches yield PMC IDs. The Bio.Entrez does
+      # not handle PMC XML. Therefore, the first round of 
+      # fetching is used to get the pmids. Run the pmids
+      # through another round of fetching to build the
+      # Bio.Entrez data format.
+      # This is not efficient but much easier than building
+      # the data format from the PMC XML.
+      pmids = self.xml_reader.get_pmids(doc_list)
+
+      self.converted_ids = True
+
+      return self.fetch(pmids)
 
   def fetch(self, pmid):
     """Breaks Entrez fetching process into blocks,
     fetches documents in chunks of fetch_block."""
     number_of_rounds = int(math.floor(len(pmid) / self.fetch_block + (len(pmid) % self.fetch_block > 0)))
+
+    self.set_retrieve_params(len(pmid), self.fetch_block)
     
     doc_list = []
 
@@ -196,12 +266,16 @@ class PubmedAPI(object):
         start = i * self.fetch_block
         finish = (i + 1) * self.fetch_block
 
-        self.update_search_progressbar(i, number_of_rounds * self.fetch_block, start)
-                 
+        self.update_search_progressbar(i, len(pmid), start)
+        
         doc_list = doc_list + self.fetch_round(pmid[start:finish])
+
+      print('\n')
     else:
       print('Will fetch %i articles.' % len(pmid))
 
       doc_list = self.fetch_round(pmid)
     
-    return self.parser.extract_from_docs(doc_list)
+    parsed_results = self.parse_results(doc_list)
+
+    return parsed_results

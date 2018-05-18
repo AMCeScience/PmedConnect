@@ -28,13 +28,33 @@ class Parser(object):
     """Extracts the required fields from the documents,
     where each document is an Entrez dictionary"""    
     parsed_doc = {}
-      
+
+    parsed_doc['doc_type'] = self.determine_doc_type(doc)
+
     for field in self.fields:
       parse_func = self.parse_functions.get(field)
       
       parsed_doc[field] = parse_func(doc)
 
     return parsed_doc
+
+  def determine_doc_type(self, doc):
+    for path in self.available_parse_paths['path_determine_type']['paths']:
+      try:
+        data = doc
+
+        for node in path:
+          data = data[node]
+
+        if node == 'PublicationTypeList':
+          return data[0]
+        
+        return node
+      except KeyError:
+        continue
+
+    return 'Other'
+
 
   def parse_abstract(self, abs_str):
     """Abstracts may contain multiple elements, convert to string and return joined string"""
@@ -56,12 +76,16 @@ class Parser(object):
 
   def extract_id_factory(self, idtype):
     """Extract an ID from Entrez XML output."""
-    def extract_id(doc_data):
+    def extract_id(doc_data, key = 'PubmedData'):
       found = None
 
-      for articleid in doc_data['PubmedData']['ArticleIdList']:
-        if articleid.attributes['IdType'].lower() == idtype:
-          found = str(articleid)
+      try:
+        for articleid in doc_data[key]['ArticleIdList']:
+          if articleid.attributes['IdType'].lower() == idtype:
+            found = str(articleid)
+      except (KeyError):
+        if key is 'PubmedData':
+          return extract_id(doc_data, 'PubmedBookData')
 
       if found is None and 'path_' + idtype in self.available_parse_paths:
         found = self.extract_path_factory(idtype)(doc_data)
@@ -74,15 +98,19 @@ class Parser(object):
     return extract_id
 
   def extract_date_factory(self, datetype):
-    def extract_date(doc_data):
-      for date in doc_data['PubmedData']['History']:
-        if date.attributes['PubStatus'].lower() == datetype:
-          return self.format_ddate(date)
+    def extract_date(doc_data, key = 'PubmedData'):
+      try:
+        for date in doc_data[key]['History']:
+          if date.attributes['PubStatus'].lower() == datetype:
+            return self.format_ddate(date)
+      except (KeyError):
+        if key is 'PubmedData':
+          return extract_date(doc_data, 'PubmedBookData')
     
     return extract_date
 
   def extract_path_factory(self, field, rdict = None, fmt = None):
-    def extract_path(doc_data, alternative = None):        
+    def extract_path(doc_data):
       for path in self.available_parse_paths['path_' + field]['paths']:
         data = doc_data
 
@@ -107,24 +135,30 @@ class Parser(object):
 
     return extract_path
 
-  def extract_keywords(self, doc_data):
-    try:
-      data = doc_data
+  def extract_keywords_factory(self):
+    def extract_keywords(doc_data):
+      for path in self.available_parse_paths['path_keywords']['paths']:
+        try:
+          data = doc_data
 
-      for node in ['MedlineCitation', 'KeywordList']:
-        data = data[node]
+          for node in path:
+            data = data[node]
 
-      keywords = []
-      
-      try:
-        for keyword in data[0]:
-          keywords.append(str(keyword))
-      except IndexError:
-        return keywords
+          keywords = []
+          
+          try:
+            for keyword in data[0]:
+              keywords.append(str(keyword))
+          except IndexError:
+            return keywords
 
-      return keywords
-    except (KeyError, TypeError):
+          return keywords
+        except (KeyError, TypeError):
+          continue
+
       return None
+
+    return extract_keywords
 
   def add_extra_parse_functions(self, parse_functions):
     raise NotImplementedError
@@ -155,4 +189,6 @@ class Parser(object):
       'journal_title': self.extract_path_factory('journal_title'),
       'journal_iso': self.extract_path_factory('journal_iso'),
       'journal_issn': self.extract_path_factory('journal_issn', fmt = str),
+
+      'keywords': self.extract_keywords_factory()
     }

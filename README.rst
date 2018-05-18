@@ -1,6 +1,12 @@
 PmedConnect
 -----------
 
+Handles searches in both PubMed and PubMed Central (PMC).
+Because the underlying Bio Entrez library does not support
+parsing of PMC XML results. Fetching PMC documents yields
+two calls, the first to retrieve PubMed IDs, and the second
+to retrieve the documents from PubMed.
+
 To use search::
 
     >>> from PmedConnect import PubmedAPI as api
