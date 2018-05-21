@@ -110,7 +110,7 @@ class Parser(object):
     return extract_date
 
   def extract_path_factory(self, field, rdict = None, fmt = None):
-    def extract_path(doc_data):        
+    def extract_path(doc_data):
       for path in self.available_parse_paths['path_' + field]['paths']:
         data = doc_data
 
