@@ -40,6 +40,8 @@ class PubmedAPI(object):
     # Set default search database
     self.db = 'pubmed'
 
+    self.pmid_extractor = self.parser.extract_id_factory('pubmed')
+
   def set_search_database(self, db):
     available_dbs = ['pubmed', 'pmc']
 
@@ -201,18 +203,37 @@ class PubmedAPI(object):
     
     return self.attach_search_summary(pmids)
 
-  def read_results(self, fetch_results):
+  def read_results(self, fetch_results, pmids):
     # For the reasoning behind this function read the comment
     # below in the function parse_results.
 
     if self.db is 'pubmed' or self.converted_ids is True:
       read_results = Entrez.read(fetch_results)
 
-      # TODO: reorder according to original pmids list
       articles = read_results['PubmedArticle']
       books = read_results['PubmedBookArticle']
 
-      return articles + books
+      # Reorder the documents by the original pmids list.
+      documents = articles + books
+
+      fetched_pmid_ids = []
+
+      for document in documents:
+        fetched_pmid_ids.append(self.pmid_extractor(document))
+
+      pmid_copy = pmids
+      new_keys = []
+
+      for item in fetched_pmid_ids:
+        new_key = pmid_copy.index(item)
+        
+        pmid_copy[new_key] = ''
+
+        new_keys.append(new_key)
+
+      documents[:] = [a for b,a in sorted(zip(new_keys, documents))]
+
+      return documents
     
     if self.db is 'pmc':
       return fetch_results
@@ -228,7 +249,7 @@ class PubmedAPI(object):
 
     fetch_results = Entrez.efetch(**func_params)
     
-    return self.read_results(fetch_results)
+    return self.read_results(fetch_results, pmids)
 
   def parse_results(self, doc_list):
     if self.db is 'pubmed' or self.converted_ids is True:
