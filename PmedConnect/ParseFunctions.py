@@ -47,7 +47,7 @@ class Parser(object):
           data = data[node]
 
         if node == 'PublicationTypeList':
-          return data[0]
+          return str(data[0])
         
         return node
       except KeyError:
