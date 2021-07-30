@@ -56,6 +56,10 @@ class Parser(object):
     return 'Other'
 
 
+  def parse_text(self, text):
+    return text.encode('utf-8')
+
+
   def parse_abstract(self, abs_str):
     """Abstracts may contain multiple elements, convert to string and return joined string"""
     return ' '.join(abs_str).encode('utf-8')
@@ -176,18 +180,18 @@ class Parser(object):
       'date_pubmed_published': self.extract_date_factory('pubmed'),
       'date_medline_published': self.extract_date_factory('medline'),
 
-      'title': self.extract_path_factory('title'),
+      'title': self.extract_path_factory('title', fmt = self.parse_text),
       'abstract': self.extract_path_factory('abstract', fmt = self.parse_abstract),
-      'pub_year': self.extract_path_factory('pub_year'),
+      'pub_year': self.extract_path_factory('pub_year', fmt = str),
       'pub_month': self.extract_path_factory('pub_month', rdict = self.months_rdict),
-      'pub_day': self.extract_path_factory('pub_day'),
-      'vol': self.extract_path_factory('vol'),
-      'pages': self.extract_path_factory('pages'),
+      'pub_day': self.extract_path_factory('pub_day', fmt = str),
+      'vol': self.extract_path_factory('vol', fmt = str),
+      'pages': self.extract_path_factory('pages', fmt = str),
       'date_pubmed_created': self.extract_path_factory('date_pubmed_created', fmt = self.format_ddate),
       'date_pubmed_updated': self.extract_path_factory('date_pubmed_updated', fmt = self.format_ddate),
 
-      'journal_title': self.extract_path_factory('journal_title'),
-      'journal_iso': self.extract_path_factory('journal_iso'),
+      'journal_title': self.extract_path_factory('journal_title', fmt = self.parse_text),
+      'journal_iso': self.extract_path_factory('journal_iso', fmt = self.parse_text),
       'journal_issn': self.extract_path_factory('journal_issn', fmt = str),
 
       'keywords': self.extract_keywords_factory()
